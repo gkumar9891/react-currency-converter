@@ -1,25 +1,55 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useMemo } from 'react';
 
-function App() {
+const CurrencyConverter = () => {
+  const [allCurrency, setAllCurrency] = useState({});
+  const [currencyFrom, setCurrencyFrom] = useState(null);
+  const [allSelectedCurrency, setAllSelectedCurrency] = useState({});
+  const [currencyTo, setCurrencyTo] = useState(null);
+  const [amount, setAmount] = useState(0);
+
+  const memoizedFetchCurrencyData = useMemo(() => async () => {
+    const response = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json');
+    const data = await response.json();
+    setAllCurrency(data);
+  }, []);
+
+  const memoizedFetchSelectedCurrency = useMemo(() => async () => {
+    if (currencyFrom) {
+      const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${currencyFrom}.json`);
+      const data = await response.json();
+      setAllSelectedCurrency(data[currencyFrom]);
+    }
+  }, [currencyFrom]);
+
+  useEffect(() => {
+    memoizedFetchCurrencyData();
+  }, [memoizedFetchCurrencyData]);
+
+  useEffect(() => {
+    memoizedFetchSelectedCurrency();
+  }, [memoizedFetchSelectedCurrency]);
+
+  useEffect(() => {
+    if (currencyTo && allSelectedCurrency[currencyTo]) {
+      setAmount(allSelectedCurrency[currencyTo]);
+    }
+  }, [currencyTo, allSelectedCurrency]);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+    <>
+      <select onChange={(e) => setCurrencyFrom(e.target.value)}>
+        <option value={null}>Please select any currency</option>
+        {Object.keys(allCurrency).map(el => <option key={el} value={el}>{el}</option>)}
+      </select>
 
-export default App;
+      <select onChange={(e) => setCurrencyTo(e.target.value)}>
+        <option value={null}>Please select any currency</option>
+        {Object.keys(allSelectedCurrency).map(el => <option key={el} value={el}>{el}</option>)}
+      </select>
+
+      {amount}
+    </>
+  );
+};
+
+export default React.memo(CurrencyConverter);
